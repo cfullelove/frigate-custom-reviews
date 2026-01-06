@@ -1,0 +1,25 @@
+mqtt:
+  broker: "tcp://homeassistant.fullelove.lan:1883"
+  client_id: "frigate-stitcher"
+  user: "frigate"
+  password: "frigate"
+  topic: "frigate/events"
+
+frigate:
+  url: "http://micro01-docker01:5000"
+
+profiles:
+  - name: "cart_port_security"
+    cameras:
+      - "CarPort"
+      - "CarPortDoorbell"
+    objects:
+      - "person"
+    gap: 30
+
+  # - name: "backyard_watch"
+  #   cameras:
+  #     - "backyard"
+  #   objects:
+  #     - "person"
+  #   gap: 15
