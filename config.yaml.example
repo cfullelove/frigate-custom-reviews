@@ -14,10 +14,12 @@ profiles:
     cameras:
       - "doorbell"
       - "driveway_cam"
-    objects:
+    labels:
       - "person"
       - "car"
       - "dog"
+    required_zones:
+      - "front stairs"
     gap: 30
 
   - name: "backyard_watch"

@@ -23,7 +23,8 @@ type FrigateConfig struct {
 type Profile struct {
 	Name    string   `yaml:"name"`    // "front_yard"
 	Cameras []string `yaml:"cameras"` // ["doorbell", "driveway"]
-	Objects []string `yaml:"objects"` // ["person", "dog"]
+	Labels  []string `yaml:"labels"`  // ["person", "dog"]
+	Zones   []string `yaml:"zones"`   // ["driveway", "road"]
 	Gap     int      `yaml:"gap"`     // 30
 }
 
@@ -60,9 +61,11 @@ type FrigateEvent struct {
 }
 
 type FrigateEventState struct {
-	ID        string  `json:"id"`
-	Camera    string  `json:"camera"`
-	Label     string  `json:"label"`
-	StartTime float64 `json:"start_time"`
-	EndTime   float64 `json:"end_time,omitempty"` // 0 or null if active? usually 0 or missing in Frigate
+	ID           string   `json:"id"`
+	Camera       string   `json:"camera"`
+	Label        string   `json:"label"`
+	StartTime    float64  `json:"start_time"`
+	EndTime      float64  `json:"end_time,omitempty"` // 0 or null if active? usually 0 or missing in Frigate
+	CurrentZones []string `json:"entered_zones"`
+	EnteredZones []string `json:"entered_zones"`
 }

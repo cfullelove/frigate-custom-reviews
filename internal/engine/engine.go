@@ -59,11 +59,11 @@ func (e *Engine) handleEvent(evt models.FrigateEvent) {
 				Events:       make(map[string]*TrackedEvent),
 				State:        "active",
 				LastUpdated:  time.Now(),
-				LastEventEnd: time.Time{}, 
+				LastEventEnd: time.Time{},
 			}
 			e.activeReviews[profile.Name] = review
 		}
-		
+
 		var beforeState *models.ReviewState
 		if review.SentFirstEvent {
 			s := e.toReviewState(review)
@@ -79,12 +79,12 @@ func (e *Engine) handleEvent(evt models.FrigateEvent) {
 		review.LastUpdated = time.Now()
 
 		afterState := e.toReviewState(review)
-		
+
 		payloadType := "new"
 		if review.SentFirstEvent {
 			payloadType = "update"
 		}
-		
+
 		msg := models.MessagePayload{
 			Type:   payloadType,
 			Before: beforeState,
@@ -94,7 +94,7 @@ func (e *Engine) handleEvent(evt models.FrigateEvent) {
 		if err := e.mqttClient.Publish(e.publishTopic, msg); err != nil {
 			log.Printf("Error publishing review update: %v", err)
 		} else {
-			log.Printf("[MQTT] Published '%s' for Review %s (Profile: %s). Events: %d", 
+			log.Printf("[MQTT] Published '%s' for Review %s (Profile: %s). Events: %d",
 				payloadType, review.ID, review.Profile.Name, len(review.Events))
 			review.SentFirstEvent = true
 		}
@@ -109,7 +109,7 @@ func (e *Engine) handleTick() {
 			// If event is active (EndTime == 0) and stale
 			if tracked.Event.After.EndTime == 0 && time.Since(tracked.LastSeen) > GhostTimeout {
 				log.Printf("Ghost event detected: %s in review %s. Closing event.", id, review.ID)
-				
+
 				// Force close the event
 				// We set EndTime to the timestamp of when it went stale (approx now)
 				nowUnix := float64(time.Now().Unix())
@@ -136,9 +136,9 @@ func (e *Engine) handleTick() {
 		// 2. Check if we should close the review
 		if e.shouldClose(review) {
 			log.Printf("Closing review %s (Profile: %s)", review.ID, name)
-			
+
 			beforeState := e.toReviewState(review)
-			
+
 			review.State = "ended"
 			afterState := e.toReviewState(review)
 
@@ -147,13 +147,13 @@ func (e *Engine) handleTick() {
 				Before: &beforeState,
 				After:  &afterState,
 			}
-			
+
 			if err := e.mqttClient.Publish(e.publishTopic, msg); err != nil {
 				log.Printf("Error publishing review end: %v", err)
 			} else {
 				log.Printf("[MQTT] Published 'end' for Review %s (Profile: %s)", review.ID, name)
 			}
-			
+
 			delete(e.activeReviews, name)
 		}
 	}
@@ -165,7 +165,7 @@ func (e *Engine) shouldClose(r *ReviewInstance) bool {
 
 	for _, tracked := range r.Events {
 		evt := tracked.Event
-		
+
 		if evt.After.EndTime == 0 {
 			activeCount++
 		} else {
@@ -181,17 +181,32 @@ func (e *Engine) shouldClose(r *ReviewInstance) bool {
 
 	lastEnd := time.Unix(int64(maxEndTime), 0)
 	waited := time.Since(lastEnd)
-	
+
 	return waited.Seconds() > float64(r.Profile.Gap)
 }
 
+func zonesOverlap(a, b []string) bool {
+	for _, v := range a {
+		if slices.Contains(b, v) {
+			return true
+		}
+	}
+	return false
+}
+
 func (e *Engine) matchesProfile(p models.Profile, state models.FrigateEventState) bool {
-	if !slices.Contains(p.Cameras, state.Camera) {
+	if len(p.Cameras) > 0 && !slices.Contains(p.Cameras, state.Camera) {
 		return false
 	}
-	if len(p.Objects) > 0 && !slices.Contains(p.Objects, state.Label) {
+
+	if len(p.Labels) > 0 && !slices.Contains(p.Labels, state.Label) {
 		return false
 	}
+
+	if len(p.Zones) > 0 && len(state.EnteredZones) > 0 && !zonesOverlap(p.Zones, state.EnteredZones) {
+		return false
+	}
+
 	return true
 }
 
@@ -208,11 +223,11 @@ func (e *Engine) toReviewState(r *ReviewInstance) models.ReviewState {
 	for _, tracked := range r.Events {
 		evt := tracked.Event
 		state := evt.After
-		
+
 		if first || state.StartTime < minStart {
 			minStart = state.StartTime
 		}
-		
+
 		if state.EndTime == 0 {
 			allEnded = false
 			activeEvents++
@@ -229,7 +244,7 @@ func (e *Engine) toReviewState(r *ReviewInstance) models.ReviewState {
 		objectsSet[state.Label] = true
 		first = false
 	}
-	
+
 	objects := []string{}
 	for k := range objectsSet {
 		objects = append(objects, k)

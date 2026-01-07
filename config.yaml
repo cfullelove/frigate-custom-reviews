@@ -14,14 +14,16 @@ profiles:
     cameras:
       - "CarPort"
       - "CarPortDoorbell"
-    objects:
+    labels:
       - "person"
+    required_zones:
+      - "Car_Port"
     gap: 30
 
   - name: "office"
     cameras:
       - "Office"
-    objects:
+    labels:
       - "person"
     gap: 30
   # - name: "backyard_watch"
