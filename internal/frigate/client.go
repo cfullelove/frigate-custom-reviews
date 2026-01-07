@@ -34,7 +34,7 @@ type FrigateAPIEvent struct {
 }
 
 func (c *Client) GetActiveEvents() ([]models.FrigateEvent, error) {
-	url := fmt.Sprintf("%s/api/events?is_active=1", c.config.URL)
+	url := fmt.Sprintf("%s/api/events?in_progress=1", c.config.URL)
 	
 	resp, err := c.client.Get(url)
 	if err != nil {
