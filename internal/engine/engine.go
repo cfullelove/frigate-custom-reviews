@@ -5,7 +5,7 @@ import (
 	"slices"
 	"time"
 
-	"frigate-stitcher/internal/models"
+	"frigate-custom-reviews/internal/models"
 
 	"github.com/google/uuid"
 )

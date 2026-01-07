@@ -3,7 +3,7 @@ package engine
 import (
 	"time"
 
-	"frigate-stitcher/internal/models"
+	"frigate-custom-reviews/internal/models"
 )
 
 // TrackedEvent wraps the FrigateEvent with a local timestamp for ghost detection

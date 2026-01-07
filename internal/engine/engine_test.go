@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"frigate-stitcher/internal/models"
+	"frigate-custom-reviews/internal/models"
 )
 
 // MockMQTTPublisher captures messages for verification

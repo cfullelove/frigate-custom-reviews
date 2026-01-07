@@ -8,7 +8,7 @@ RUN go mod download
 
 COPY . .
 # Build the binary
-RUN go build -o frigate-stitcher cmd/frigate-stitcher/main.go
+RUN go build -o frigate-custom-reviews cmd/frigate-custom-reviews/main.go
 
 # Runtime Stage
 FROM alpine:3.19
@@ -19,7 +19,7 @@ WORKDIR /app
 # apk add --no-cache ca-certificates is often good praxis
 RUN apk add --no-cache ca-certificates
 
-COPY --from=builder /app/frigate-stitcher /app/frigate-stitcher
+COPY --from=builder /app/frigate-custom-reviews /app/frigate-custom-reviews
 COPY config.yaml /app/config.yaml
 
-CMD ["./frigate-stitcher", "-config", "/app/config.yaml"]
+CMD ["./frigate-custom-reviews", "-config", "/app/config.yaml"]

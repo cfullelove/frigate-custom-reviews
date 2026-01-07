@@ -1,10 +1,10 @@
 mqtt:
   broker: "tcp://localhost:1883"
-  client_id: "frigate-stitcher"
+  client_id: "frigate-custom-reviews"
   user: ""
   password: ""
   frigate_events_topic: "frigate/events"
-  reviews_publish_topic: "frigate_stitcher/reviews"
+  reviews_publish_topic: "frigate_custom_reviews/reviews"
 
 frigate:
   url: "http://localhost:5000"

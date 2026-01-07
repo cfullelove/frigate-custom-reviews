@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"frigate-stitcher/internal/models"
+	"frigate-custom-reviews/internal/models"
 
 	"gopkg.in/yaml.v3"
 )
@@ -26,10 +26,10 @@ func LoadConfig(path string) (*models.Config, error) {
 		cfg.MQTT.FrigateEventsTopic = "frigate/events"
 	}
 	if cfg.MQTT.ReviewsPublishTopic == "" {
-		cfg.MQTT.ReviewsPublishTopic = "frigate_stitcher/reviews"
+		cfg.MQTT.ReviewsPublishTopic = "frigate_custom_reviews/reviews"
 	}
 	if cfg.MQTT.ClientID == "" {
-		cfg.MQTT.ClientID = "frigate-stitcher"
+		cfg.MQTT.ClientID = "frigate-custom-reviews"
 	}
 
 	if cfg.GhostTimeout == 0 {

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"frigate-stitcher/internal/models"
+	"frigate-custom-reviews/internal/models"
 )
 
 type Client struct {
@@ -35,7 +35,7 @@ type FrigateAPIEvent struct {
 
 func (c *Client) GetActiveEvents() ([]models.FrigateEvent, error) {
 	url := fmt.Sprintf("%s/api/events?in_progress=1", c.config.URL)
-	
+
 	resp, err := c.client.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query frigate API: %w", err)
@@ -55,7 +55,7 @@ func (c *Client) GetActiveEvents() ([]models.FrigateEvent, error) {
 	for _, ae := range apiEvents {
 		// Convert API struct to our internal Model
 		// The API represents the "current state", so we map it to "After"
-		
+
 		endTime := 0.0
 		if ae.EndTime != nil {
 			endTime = *ae.EndTime

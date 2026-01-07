@@ -1,6 +1,6 @@
-# Frigate Stitcher
+# Frigate Custom Reviews
 
-Frigate Stitcher is a lightweight Go application designed to augment Frigate NVR by aggregating discrete Frigate events into "Custom Reviews" or "Incidents" based on user-defined profiles.
+Frigate Custom Reviews is a lightweight Go application designed to augment Frigate NVR by aggregating discrete Frigate events into "Custom Reviews" or "Incidents" based on user-defined profiles.
 
 It listens to raw `frigate/events` over MQTT, matches them against configured profiles (camera + object combinations), and stitches them into a single "Review" entity. This Review stays active as long as activity continues, waiting for a configurable quiet period (gap) before closing.
 
@@ -10,7 +10,7 @@ It listens to raw `frigate/events` over MQTT, matches them against configured pr
 *   **Gap Logic**: Prevents fragmented alerts by keeping a review open during short pauses in activity.
 *   **State Recovery**: Queries Frigate API on startup to sync active events.
 *   **Ghost Event Detection**: Automatically cleans up events that Frigate fails to close (network blips).
-*   **Standard Output**: Emits MQTT events (`frigate_stitcher/review`) following standard Frigate JSON patterns.
+*   **Standard Output**: Emits MQTT events (`frigate_custom_reviews/reviews`) following standard Frigate JSON patterns.
 
 ## Architecture
 
@@ -26,7 +26,7 @@ graph LR
 
 ### Key Components
 
-*   **`cmd/frigate-stitcher`**: Entry point. Handles config loading, signal trapping, and component wiring.
+*   **`cmd/frigate-custom-reviews`**: Entry point. Handles config loading, signal trapping, and component wiring.
 *   **`internal/engine`**: The core logic.
     *   **`Engine`**: Runs a single goroutine `Run()` loop that selects on incoming events and a 1-second `Ticker`.
     *   **`ReviewInstance`**: Represents an aggregated incident. Holds a map of `TrackedEvent`s.
@@ -68,7 +68,7 @@ Configuration is loaded from `config.yaml`.
 mqtt:
   broker: "tcp://localhost:1883"
   frigate_events_topic: "frigate/events"
-  reviews_publish: "frigate_stitcher/review"
+  reviews_publish_topic: "frigate_custom_reviews/reviews"
 
 frigate:
   url: "http://localhost:5000"
@@ -90,17 +90,17 @@ profiles:
 ### Build
 
 ```bash
-go build -o frigate-stitcher cmd/frigate-stitcher/main.go
+go build -o frigate-custom-reviews cmd/frigate-custom-reviews/main.go
 ```
 
 ### Run
 
 ```bash
-./frigate-stitcher -config config.yaml
+./frigate-custom-reviews -config config.yaml
 ```
 
 ### Docker Build
 
 ```bash
-docker build -t frigate-stitcher .
+docker build -t frigate-custom-reviews .
 ```

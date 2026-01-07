@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"frigate-stitcher/internal/models"
+	"frigate-custom-reviews/internal/models"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
@@ -19,7 +19,7 @@ func NewClient(cfg models.MQTTConfig) *Client {
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(cfg.Broker)
 	opts.SetClientID(cfg.ClientID)
-	
+
 	if cfg.User != "" {
 		opts.SetUsername(cfg.User)
 		opts.SetPassword(cfg.Password)
@@ -57,11 +57,11 @@ func (c *Client) Subscribe(ingestChan chan<- models.FrigateEvent) error {
 		}
 		ingestChan <- event
 	})
-	
+
 	if token.Wait() && token.Error() != nil {
 		return token.Error()
 	}
-	
+
 	log.Printf("Subscribed to topic: %s", c.config.FrigateEventsTopic)
 	return nil
 }

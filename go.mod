@@ -1,4 +1,4 @@
-module frigate-stitcher
+module frigate-custom-reviews
 
 go 1.25.5
 
