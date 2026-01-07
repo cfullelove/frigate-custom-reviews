@@ -20,6 +20,6 @@ WORKDIR /app
 RUN apk add --no-cache ca-certificates
 
 COPY --from=builder /app/frigate-custom-reviews /app/frigate-custom-reviews
-COPY config.yaml /app/config.yaml
+COPY config.yaml.example /app/config.yaml
 
 CMD ["./frigate-custom-reviews", "-config", "/app/config.yaml"]
