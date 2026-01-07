@@ -10,16 +10,34 @@ import (
 	"github.com/google/uuid"
 )
 
-var GhostTimeout = 300 * time.Second
+type EngineOption func(*Engine)
 
-func NewEngine(profiles []models.Profile, mqttClient MQTTPublisher, publishTopic string) *Engine {
-	return &Engine{
+func WithPublishUpdates(publish bool) EngineOption {
+	return func(e *Engine) {
+		e.publishUpdates = publish
+	}
+}
+
+func WithGhostTimeout(timeout int) EngineOption {
+	return func(e *Engine) {
+		e.ghostTimeout = time.Duration(timeout) * time.Second
+	}
+}
+
+func NewEngine(profiles []models.Profile, mqttClient MQTTPublisher, publishTopic string, opts ...EngineOption) *Engine {
+	engine := &Engine{
 		profiles:      profiles,
 		activeReviews: make(map[string]*ReviewInstance),
 		ingestChan:    make(chan models.FrigateEvent, 100),
 		mqttClient:    mqttClient,
 		publishTopic:  publishTopic,
 	}
+
+	for _, opt := range opts {
+		opt(engine)
+	}
+
+	return engine
 }
 
 func (e *Engine) IngestChannel() chan<- models.FrigateEvent {
@@ -85,6 +103,10 @@ func (e *Engine) handleEvent(evt models.FrigateEvent) {
 			payloadType = "update"
 		}
 
+		if !e.publishUpdates {
+			return
+		}
+
 		msg := models.MessagePayload{
 			Type:   payloadType,
 			Before: beforeState,
@@ -107,8 +129,9 @@ func (e *Engine) handleTick() {
 		updatedReview := false
 		for id, tracked := range review.Events {
 			// If event is active (EndTime == 0) and stale
-			if tracked.Event.After.EndTime == 0 && time.Since(tracked.LastSeen) > GhostTimeout {
+			if tracked.Event.After.EndTime == 0 && time.Since(tracked.LastSeen) > e.ghostTimeout {
 				log.Printf("Ghost event detected: %s in review %s. Closing event.", id, review.ID)
+				log.Printf("[Debug] %v, %v ", time.Since(tracked.LastSeen), e.ghostTimeout)
 
 				// Force close the event
 				// We set EndTime to the timestamp of when it went stale (approx now)
@@ -119,7 +142,7 @@ func (e *Engine) handleTick() {
 			}
 		}
 
-		if updatedReview {
+		if updatedReview && e.publishUpdates {
 			// If we modified events, we should publish an update
 			// (Use 'update' message)
 			currentState := e.toReviewState(review)
@@ -178,6 +201,8 @@ func (e *Engine) shouldClose(r *ReviewInstance) bool {
 	if activeCount > 0 {
 		return false
 	}
+
+	log.Printf("[Debug] Entering Gap for review %s", r.ID)
 
 	lastEnd := time.Unix(int64(maxEndTime), 0)
 	waited := time.Since(lastEnd)

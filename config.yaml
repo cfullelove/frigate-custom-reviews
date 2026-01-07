@@ -9,8 +9,11 @@ mqtt:
 frigate:
   url: "http://micro01-docker01:5000"
 
+publish_updates: true
+event_timeout: 300
+
 profiles:
-  - name: "car_port_security"
+  - name: "Car Port"
     cameras:
       - "CarPort"
       - "CarPortDoorbell"
@@ -20,15 +23,23 @@ profiles:
       - "Car_Port"
     gap: 30
 
-  - name: "office"
+  - name: "Office"
     cameras:
       - "Office"
     labels:
       - "person"
     gap: 30
-  # - name: "backyard_watch"
-  #   cameras:
-  #     - "backyard"
-  #   objects:
-  #     - "person"
-  #   gap: 15
+
+  - name: "Garage"
+    cameras:
+      - "Garage"
+    labels:
+      - "person"
+    gap: 30
+
+  - name: "Outside"
+    cameras:
+      - Deck
+      - Patio
+    labels:
+      - person

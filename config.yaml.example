@@ -9,6 +9,9 @@ mqtt:
 frigate:
   url: "http://localhost:5000"
 
+publish_updates: true
+event_timeout: 300
+
 profiles:
   - name: "front_yard_security"
     cameras:

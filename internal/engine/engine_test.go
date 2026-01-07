@@ -153,7 +153,7 @@ func TestEngine_Lifecycle(t *testing.T) {
 		Gap:     1,
 	}
 
-	engine := NewEngine([]models.Profile{profile}, mockMQTT, "test/review")
+	engine := NewEngine([]models.Profile{profile}, mockMQTT, "test/review", WithPublishUpdates(true))
 
 	// Phase 1: Start Event A
 	evtA := models.FrigateEvent{
@@ -266,11 +266,6 @@ func TestEngine_GapLogic(t *testing.T) {
 }
 
 func TestGhostEvents(t *testing.T) {
-	// Reduce global timeout for test
-	originalTimeout := GhostTimeout
-	GhostTimeout = 10 * time.Millisecond
-	defer func() { GhostTimeout = originalTimeout }()
-
 	mockMQTT := &MockMQTTPublisher{}
 	profile := models.Profile{
 		Name:    "test_ghost",
@@ -279,7 +274,8 @@ func TestGhostEvents(t *testing.T) {
 		Gap:     1,
 	}
 
-	engine := NewEngine([]models.Profile{profile}, mockMQTT, "test/review")
+	engine := NewEngine([]models.Profile{profile}, mockMQTT, "test/review", WithPublishUpdates(true))
+	engine.ghostTimeout = 10 * time.Millisecond
 
 	// Start event
 	evt := models.FrigateEvent{

@@ -32,5 +32,12 @@ func LoadConfig(path string) (*models.Config, error) {
 		cfg.MQTT.ClientID = "frigate-stitcher"
 	}
 
+	if cfg.GhostTimeout == 0 {
+		cfg.GhostTimeout = 300
+	}
+
+	// cfgBytes, _ := json.Marshal(cfg)
+	// log.Printf("[Debug] Config: %v", string(cfgBytes))
+
 	return &cfg, nil
 }

@@ -2,9 +2,11 @@ package models
 
 // Config defines the user settings
 type Config struct {
-	MQTT     MQTTConfig    `yaml:"mqtt"`
-	Frigate  FrigateConfig `yaml:"frigate"`
-	Profiles []Profile     `yaml:"profiles"`
+	MQTT           MQTTConfig    `yaml:"mqtt"`
+	Frigate        FrigateConfig `yaml:"frigate"`
+	Profiles       []Profile     `yaml:"profiles"`
+	PublishUpdates bool          `yaml:"publish_updates"`
+	GhostTimeout   int           `yaml:"event_timeout"`
 }
 
 type MQTTConfig struct {
@@ -21,11 +23,11 @@ type FrigateConfig struct {
 }
 
 type Profile struct {
-	Name    string   `yaml:"name"`    // "front_yard"
-	Cameras []string `yaml:"cameras"` // ["doorbell", "driveway"]
-	Labels  []string `yaml:"labels"`  // ["person", "dog"]
-	RequiredZones   []string `yaml:"required_zones"`   // ["driveway", "road"]
-	Gap     int      `yaml:"gap"`     // 30
+	Name          string   `yaml:"name"`           // "front_yard"
+	Cameras       []string `yaml:"cameras"`        // ["doorbell", "driveway"]
+	Labels        []string `yaml:"labels"`         // ["person", "dog"]
+	RequiredZones []string `yaml:"required_zones"` // ["driveway", "road"]
+	Gap           int      `yaml:"gap"`            // 30
 }
 
 type LinkedEventSummary struct {
