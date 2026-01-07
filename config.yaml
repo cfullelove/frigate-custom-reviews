@@ -3,13 +3,14 @@ mqtt:
   client_id: "frigate-stitcher"
   user: "frigate"
   password: "frigate"
-  topic: "frigate/events"
+  frigate_events_topic: "frigate/events"
+  reviews_publish_topic: "frigate_stitcher/reviews"
 
 frigate:
   url: "http://micro01-docker01:5000"
 
 profiles:
-  - name: "cart_port_security"
+  - name: "car_port_security"
     cameras:
       - "CarPort"
       - "CarPortDoorbell"
@@ -17,6 +18,12 @@ profiles:
       - "person"
     gap: 30
 
+  - name: "office"
+    cameras:
+      - "Office"
+    objects:
+      - "person"
+    gap: 30
   # - name: "backyard_watch"
   #   cameras:
   #     - "backyard"

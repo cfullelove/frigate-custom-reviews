@@ -12,12 +12,13 @@ import (
 
 const GhostTimeout = 300 * time.Second
 
-func NewEngine(profiles []models.Profile, mqttClient MQTTPublisher) *Engine {
+func NewEngine(profiles []models.Profile, mqttClient MQTTPublisher, publishTopic string) *Engine {
 	return &Engine{
 		profiles:      profiles,
 		activeReviews: make(map[string]*ReviewInstance),
 		ingestChan:    make(chan models.FrigateEvent, 100),
 		mqttClient:    mqttClient,
+		publishTopic:  publishTopic,
 	}
 }
 
@@ -90,9 +91,11 @@ func (e *Engine) handleEvent(evt models.FrigateEvent) {
 			After:  &afterState,
 		}
 
-		if err := e.mqttClient.Publish("frigate_stitcher/review", msg); err != nil {
+		if err := e.mqttClient.Publish(e.publishTopic, msg); err != nil {
 			log.Printf("Error publishing review update: %v", err)
 		} else {
+			log.Printf("[MQTT] Published '%s' for Review %s (Profile: %s). Events: %d", 
+				payloadType, review.ID, review.Profile.Name, len(review.Events))
 			review.SentFirstEvent = true
 		}
 	}
@@ -125,7 +128,9 @@ func (e *Engine) handleTick() {
 				Before: nil, // We could calculate before, but for ghost cleanup current state is vital
 				After:  &currentState,
 			}
-			e.mqttClient.Publish("frigate_stitcher/review", msg)
+			if err := e.mqttClient.Publish(e.publishTopic, msg); err == nil {
+				log.Printf("[MQTT] Published 'update' (ghost cleanup) for Review %s", review.ID)
+			}
 		}
 
 		// 2. Check if we should close the review
@@ -143,8 +148,10 @@ func (e *Engine) handleTick() {
 				After:  &afterState,
 			}
 			
-			if err := e.mqttClient.Publish("frigate_stitcher/review", msg); err != nil {
+			if err := e.mqttClient.Publish(e.publishTopic, msg); err != nil {
 				log.Printf("Error publishing review end: %v", err)
+			} else {
+				log.Printf("[MQTT] Published 'end' for Review %s (Profile: %s)", review.ID, name)
 			}
 			
 			delete(e.activeReviews, name)
@@ -192,7 +199,7 @@ func (e *Engine) toReviewState(r *ReviewInstance) models.ReviewState {
 	var minStart float64 = 0
 	var maxEnd float64 = 0
 	activeEvents := 0
-	linkedEvents := []string{}
+	linkedEvents := []models.LinkedEventSummary{}
 	objectsSet := make(map[string]bool)
 
 	first := true
@@ -215,7 +222,10 @@ func (e *Engine) toReviewState(r *ReviewInstance) models.ReviewState {
 			}
 		}
 
-		linkedEvents = append(linkedEvents, state.ID)
+		linkedEvents = append(linkedEvents, models.LinkedEventSummary{
+			ID:     state.ID,
+			Camera: state.Camera,
+		})
 		objectsSet[state.Label] = true
 		first = false
 	}

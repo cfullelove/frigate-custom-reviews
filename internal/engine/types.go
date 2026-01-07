@@ -30,6 +30,7 @@ type Engine struct {
 	activeReviews map[string]*ReviewInstance // Key is Profile Name
 	ingestChan    chan models.FrigateEvent
 	mqttClient    MQTTPublisher
+	publishTopic  string
 }
 
 // MQTTPublisher interface to decouple engine from specific mqtt implementation

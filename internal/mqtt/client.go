@@ -49,7 +49,7 @@ func (c *Client) Connect() error {
 }
 
 func (c *Client) Subscribe(ingestChan chan<- models.FrigateEvent) error {
-	token := c.client.Subscribe(c.config.Topic, 0, func(client mqtt.Client, msg mqtt.Message) {
+	token := c.client.Subscribe(c.config.FrigateEventsTopic, 0, func(client mqtt.Client, msg mqtt.Message) {
 		var event models.FrigateEvent
 		if err := json.Unmarshal(msg.Payload(), &event); err != nil {
 			log.Printf("Failed to unmarshal Frigate event: %v", err)
@@ -62,7 +62,7 @@ func (c *Client) Subscribe(ingestChan chan<- models.FrigateEvent) error {
 		return token.Error()
 	}
 	
-	log.Printf("Subscribed to topic: %s", c.config.Topic)
+	log.Printf("Subscribed to topic: %s", c.config.FrigateEventsTopic)
 	return nil
 }
 

@@ -1,0 +1,28 @@
+mqtt:
+  broker: "tcp://localhost:1883"
+  client_id: "frigate-stitcher"
+  user: ""
+  password: ""
+  frigate_events_topic: "frigate/events"
+  reviews_publish_topic: "frigate_stitcher/reviews"
+
+frigate:
+  url: "http://localhost:5000"
+
+profiles:
+  - name: "front_yard_security"
+    cameras:
+      - "doorbell"
+      - "driveway_cam"
+    objects:
+      - "person"
+      - "car"
+      - "dog"
+    gap: 30
+
+  - name: "backyard_watch"
+    cameras:
+      - "backyard"
+    objects:
+      - "person"
+    gap: 15

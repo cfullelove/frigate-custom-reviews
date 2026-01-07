@@ -22,8 +22,11 @@ func LoadConfig(path string) (*models.Config, error) {
 	}
 
 	// Set defaults if needed
-	if cfg.MQTT.Topic == "" {
-		cfg.MQTT.Topic = "frigate/events"
+	if cfg.MQTT.FrigateEventsTopic == "" {
+		cfg.MQTT.FrigateEventsTopic = "frigate/events"
+	}
+	if cfg.MQTT.ReviewsPublishTopic == "" {
+		cfg.MQTT.ReviewsPublishTopic = "frigate_stitcher/review"
 	}
 	if cfg.MQTT.ClientID == "" {
 		cfg.MQTT.ClientID = "frigate-stitcher"

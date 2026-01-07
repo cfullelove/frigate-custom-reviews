@@ -67,7 +67,8 @@ Configuration is loaded from `config.yaml`.
 ```yaml
 mqtt:
   broker: "tcp://localhost:1883"
-  topic: "frigate/events"
+  frigate_events_topic: "frigate/events"
+  reviews_publish: "frigate_stitcher/review"
 
 frigate:
   url: "http://localhost:5000"

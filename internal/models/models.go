@@ -8,11 +8,12 @@ type Config struct {
 }
 
 type MQTTConfig struct {
-	Broker   string `yaml:"broker"`
-	ClientID string `yaml:"client_id"`
-	User     string `yaml:"user"`
-	Password string `yaml:"password"`
-	Topic    string `yaml:"topic"`
+	Broker              string `yaml:"broker"`
+	ClientID            string `yaml:"client_id"`
+	User                string `yaml:"user"`
+	Password            string `yaml:"password"`
+	FrigateEventsTopic  string `yaml:"frigate_events_topic"`
+	ReviewsPublishTopic string `yaml:"reviews_publish_topic"`
 }
 
 type FrigateConfig struct {
@@ -26,17 +27,22 @@ type Profile struct {
 	Gap     int      `yaml:"gap"`     // 30
 }
 
+type LinkedEventSummary struct {
+	ID     string `json:"id"`
+	Camera string `json:"camera"`
+}
+
 // ReviewState represents the "Data" block in the JSON payload
 type ReviewState struct {
-	ID           string   `json:"id"`
-	ProfileName  string   `json:"profile_name"`
-	State        string   `json:"state"` // "active" or "ended"
-	StartTime    float64  `json:"start_time"`
-	EndTime      *float64 `json:"end_time,omitempty"`
-	EventCount   int      `json:"event_count"`
-	ActiveEvents int      `json:"active_events"`
-	LinkedEvents []string `json:"linked_events"` // List of Frigate IDs
-	Objects      []string `json:"objects"`
+	ID           string               `json:"id"`
+	ProfileName  string               `json:"profile_name"`
+	State        string               `json:"state"` // "active" or "ended"
+	StartTime    float64              `json:"start_time"`
+	EndTime      *float64             `json:"end_time,omitempty"`
+	EventCount   int                  `json:"event_count"`
+	ActiveEvents int                  `json:"active_events"`
+	LinkedEvents []LinkedEventSummary `json:"linked_events"` // List of Frigate IDs with Camera
+	Objects      []string             `json:"objects"`
 }
 
 // MessagePayload represents the actual MQTT message
