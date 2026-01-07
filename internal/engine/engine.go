@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 )
 
-const GhostTimeout = 300 * time.Second
+var GhostTimeout = 300 * time.Second
 
 func NewEngine(profiles []models.Profile, mqttClient MQTTPublisher, publishTopic string) *Engine {
 	return &Engine{
@@ -203,7 +203,7 @@ func (e *Engine) matchesProfile(p models.Profile, state models.FrigateEventState
 		return false
 	}
 
-	if len(p.Zones) > 0 && len(state.EnteredZones) > 0 && !zonesOverlap(p.Zones, state.EnteredZones) {
+	if len(p.RequiredZones) > 0 && len(state.EnteredZones) > 0 && !zonesOverlap(p.RequiredZones, state.EnteredZones) {
 		return false
 	}
 

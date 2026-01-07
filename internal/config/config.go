@@ -26,7 +26,7 @@ func LoadConfig(path string) (*models.Config, error) {
 		cfg.MQTT.FrigateEventsTopic = "frigate/events"
 	}
 	if cfg.MQTT.ReviewsPublishTopic == "" {
-		cfg.MQTT.ReviewsPublishTopic = "frigate_stitcher/review"
+		cfg.MQTT.ReviewsPublishTopic = "frigate_stitcher/reviews"
 	}
 	if cfg.MQTT.ClientID == "" {
 		cfg.MQTT.ClientID = "frigate-stitcher"

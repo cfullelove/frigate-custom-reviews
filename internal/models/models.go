@@ -24,7 +24,7 @@ type Profile struct {
 	Name    string   `yaml:"name"`    // "front_yard"
 	Cameras []string `yaml:"cameras"` // ["doorbell", "driveway"]
 	Labels  []string `yaml:"labels"`  // ["person", "dog"]
-	Zones   []string `yaml:"zones"`   // ["driveway", "road"]
+	RequiredZones   []string `yaml:"required_zones"`   // ["driveway", "road"]
 	Gap     int      `yaml:"gap"`     // 30
 }
 

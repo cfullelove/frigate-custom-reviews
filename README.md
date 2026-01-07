@@ -76,7 +76,8 @@ frigate:
 profiles:
   - name: "front_yard"
     cameras: ["doorbell", "driveway"]
-    objects: ["person", "car"]
+    labels: ["person", "car"]
+    required_zones: ["stairs"]
     gap: 30 # Seconds to wait before closing
 ```
 
