@@ -103,7 +103,7 @@ func (e *Engine) handleEvent(evt models.FrigateEvent) {
 			payloadType = "update"
 		}
 
-		if !e.publishUpdates {
+		if !e.publishUpdates && payloadType == "update" {
 			return
 		}
 
