@@ -46,6 +46,8 @@ type ReviewState struct {
 	ActiveEvents int                  `json:"active_events"`
 	LinkedEvents []LinkedEventSummary `json:"linked_events"` // List of Frigate IDs with Camera
 	Objects      []string             `json:"objects"`
+	Cameras      []string             `json:"cameras"`
+	Zones        []string             `json:"zones"`
 }
 
 // MessagePayload represents the actual MQTT message

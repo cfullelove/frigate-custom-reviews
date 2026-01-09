@@ -232,6 +232,10 @@ func (e *Engine) matchesProfile(p models.Profile, state models.FrigateEventState
 		return false
 	}
 
+	if len(p.RequiredZones) > 0 && len(state.EnteredZones) == 0 {
+		return false
+	}
+
 	return true
 }
 
@@ -241,6 +245,8 @@ func (e *Engine) toReviewState(r *ReviewInstance) models.ReviewState {
 	activeEvents := 0
 	linkedEvents := []models.LinkedEventSummary{}
 	objectsSet := make(map[string]bool)
+	camerasSet := make(map[string]bool)
+	zonesSet := make(map[string]bool)
 
 	first := true
 	allEnded := true
@@ -267,12 +273,27 @@ func (e *Engine) toReviewState(r *ReviewInstance) models.ReviewState {
 			Camera: state.Camera,
 		})
 		objectsSet[state.Label] = true
+		camerasSet[state.Camera] = true
+		for _, zone := range state.EnteredZones {
+			zonesSet[zone] = true
+		}
+
 		first = false
 	}
 
 	objects := []string{}
 	for k := range objectsSet {
 		objects = append(objects, k)
+	}
+
+	cameras := []string{}
+	for k := range camerasSet {
+		cameras = append(cameras, k)
+	}
+
+	zones := []string{}
+	for k := range zonesSet {
+		zones = append(zones, k)
 	}
 
 	out := models.ReviewState{
@@ -284,6 +305,8 @@ func (e *Engine) toReviewState(r *ReviewInstance) models.ReviewState {
 		ActiveEvents: activeEvents,
 		LinkedEvents: linkedEvents,
 		Objects:      objects,
+		Cameras:      cameras,
+		Zones:        zones,
 	}
 
 	if allEnded && len(r.Events) > 0 {

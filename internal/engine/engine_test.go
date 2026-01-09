@@ -110,6 +110,16 @@ func TestMatchesProfile(t *testing.T) {
 			want: true,
 		},
 		{
+			name: "No Zone",
+			profile: models.Profile{
+				RequiredZones: []string{"zoneA"},
+			},
+			state: models.FrigateEventState{
+				EnteredZones: []string{},
+			},
+			want: false,
+		},
+		{
 			name: "Zone Mismatch",
 			profile: models.Profile{
 				Cameras:       []string{"cam1"},
