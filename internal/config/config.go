@@ -36,6 +36,10 @@ func LoadConfig(path string) (*models.Config, error) {
 		cfg.GhostTimeout = 300
 	}
 
+	if cfg.Logging.Level == "" {
+		cfg.Logging.Level = "info"
+	}
+
 	// cfgBytes, _ := json.Marshal(cfg)
 	// log.Printf("[Debug] Config: %v", string(cfgBytes))
 

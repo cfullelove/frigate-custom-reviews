@@ -4,9 +4,14 @@ package models
 type Config struct {
 	MQTT           MQTTConfig    `yaml:"mqtt"`
 	Frigate        FrigateConfig `yaml:"frigate"`
+	Logging        LoggingConfig `yaml:"logging"`
 	Profiles       []Profile     `yaml:"profiles"`
 	PublishUpdates bool          `yaml:"publish_updates"`
 	GhostTimeout   int           `yaml:"event_timeout"`
+}
+
+type LoggingConfig struct {
+	Level string `yaml:"level"`
 }
 
 type MQTTConfig struct {

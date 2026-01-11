@@ -1,10 +1,10 @@
 package engine
 
 import (
-	"log"
 	"slices"
 	"time"
 
+	"frigate-custom-reviews/internal/logger"
 	"frigate-custom-reviews/internal/models"
 
 	"github.com/google/uuid"
@@ -48,7 +48,7 @@ func (e *Engine) Run() {
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 
-	log.Println("[INFO] Engine started")
+	logger.Info("Engine started")
 
 	for {
 		select {
@@ -65,20 +65,20 @@ func (e *Engine) handleEvent(evt models.FrigateEvent) {
 
 	for _, profile := range e.profiles {
 		if !e.matchesProfile(profile, state) {
-			// log.Printf("[DEBUG] Rejectd Event: ID: %v, Camera: %v, Label: %v, Zones: %v",
-			// 	evt.After.ID,
-			// 	evt.After.Camera,
-			// 	evt.After.Label,
-			// 	evt.After.EnteredZones,
-			// )
+			logger.Debugf("Rejectd Event: ID: %v, Camera: %v, Label: %v, Zones: %v",
+				evt.After.ID,
+				evt.After.Camera,
+				evt.After.Label,
+				evt.After.EnteredZones,
+			)
 			continue
 		} else {
-			// log.Printf("[DEBUG] Matched Event: ID: %v, Camera: %v, Label: %v, Zones: %v",
-			// 	evt.After.ID,
-			// 	evt.After.Camera,
-			// 	evt.After.Label,
-			// 	evt.After.EnteredZones,
-			// )
+			logger.Debugf("Matched Event: ID: %v, Camera: %v, Label: %v, Zones: %v",
+				evt.After.ID,
+				evt.After.Camera,
+				evt.After.Label,
+				evt.After.EnteredZones,
+			)
 		}
 
 		review, exists := e.activeReviews[profile.Name]
@@ -129,9 +129,9 @@ func (e *Engine) handleEvent(evt models.FrigateEvent) {
 		}
 
 		if err := e.mqttClient.Publish(e.publishTopic, msg); err != nil {
-			log.Printf("[ERROR] Error publishing review update: %v", err)
+			logger.Errorf("Error publishing review update: %v", err)
 		} else {
-			log.Printf("[INFO] [MQTT] Published '%s' for Review %s (Profile: %s). Events: %d",
+			logger.Infof("[MQTT] Published '%s' for Review %s (Profile: %s). Events: %d",
 				payloadType, review.ID, review.Profile.Name, len(review.Events))
 			review.SentFirstEvent = true
 		}
@@ -145,8 +145,8 @@ func (e *Engine) handleTick() {
 		for id, tracked := range review.Events {
 			// If event is active (EndTime == 0) and stale
 			if tracked.Event.After.EndTime == 0 && time.Since(tracked.LastSeen) > e.ghostTimeout {
-				log.Printf("[NOTICE] Ghost event detected: %s in review %s. Closing event.", id, review.ID)
-				log.Printf("[DEBUG] %v, %v ", time.Since(tracked.LastSeen), e.ghostTimeout)
+				logger.Noticef("Ghost event detected: %s in review %s. Closing event.", id, review.ID)
+				logger.Debugf("%v, %v ", time.Since(tracked.LastSeen), e.ghostTimeout)
 
 				// Force close the event
 				// We set EndTime to the timestamp of when it went stale (approx now)
@@ -167,13 +167,13 @@ func (e *Engine) handleTick() {
 				After:  &currentState,
 			}
 			if err := e.mqttClient.Publish(e.publishTopic, msg); err == nil {
-				log.Printf("[INFO] [MQTT] Published 'update' (ghost cleanup) for Review %s", review.ID)
+				logger.Infof("[MQTT] Published 'update' (ghost cleanup) for Review %s", review.ID)
 			}
 		}
 
 		// 2. Check if we should close the review
 		if e.shouldClose(review) {
-			log.Printf("[INFO] Closing review %s (Profile: %s)", review.ID, name)
+			logger.Infof("Closing review %s (Profile: %s)", review.ID, name)
 
 			beforeState := e.toReviewState(review)
 
@@ -187,9 +187,9 @@ func (e *Engine) handleTick() {
 			}
 
 			if err := e.mqttClient.Publish(e.publishTopic, msg); err != nil {
-				log.Printf("[ERROR] Error publishing review end: %v", err)
+				logger.Errorf("Error publishing review end: %v", err)
 			} else {
-				log.Printf("[INFO] [MQTT] Published 'end' for Review %s (Profile: %s)", review.ID, name)
+				logger.Infof("[MQTT] Published 'end' for Review %s (Profile: %s)", review.ID, name)
 			}
 
 			delete(e.activeReviews, name)
@@ -219,7 +219,7 @@ func (e *Engine) shouldClose(r *ReviewInstance) bool {
 
 	if r.State != "pending-close" {
 		r.State = "pending-close"
-		log.Printf("[INFO] Entering Gap for review %s", r.ID)
+		logger.Infof("Entering Gap for review %s", r.ID)
 	}
 
 	lastEnd := time.Unix(int64(maxEndTime), 0)

@@ -3,8 +3,8 @@ package mqtt
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 
+	"frigate-custom-reviews/internal/logger"
 	"frigate-custom-reviews/internal/models"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -27,10 +27,10 @@ func NewClient(cfg models.MQTTConfig) *Client {
 
 	opts.SetAutoReconnect(true)
 	opts.SetOnConnectHandler(func(c mqtt.Client) {
-		log.Printf("Connected to MQTT broker at %s", cfg.Broker)
+		logger.Infof("Connected to MQTT broker at %s", cfg.Broker)
 	})
 	opts.SetConnectionLostHandler(func(c mqtt.Client, err error) {
-		log.Printf("Lost connection to MQTT broker: %v", err)
+		logger.Warnf("Lost connection to MQTT broker: %v", err)
 	})
 
 	client := mqtt.NewClient(opts)
@@ -52,7 +52,7 @@ func (c *Client) Subscribe(ingestChan chan<- models.FrigateEvent) error {
 	token := c.client.Subscribe(c.config.FrigateEventsTopic, 0, func(client mqtt.Client, msg mqtt.Message) {
 		var event models.FrigateEvent
 		if err := json.Unmarshal(msg.Payload(), &event); err != nil {
-			log.Printf("Failed to unmarshal Frigate event: %v", err)
+			logger.Errorf("Failed to unmarshal Frigate event: %v", err)
 			return
 		}
 		ingestChan <- event
@@ -62,7 +62,7 @@ func (c *Client) Subscribe(ingestChan chan<- models.FrigateEvent) error {
 		return token.Error()
 	}
 
-	log.Printf("Subscribed to topic: %s", c.config.FrigateEventsTopic)
+	logger.Infof("Subscribed to topic: %s", c.config.FrigateEventsTopic)
 	return nil
 }
 

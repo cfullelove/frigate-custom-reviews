@@ -9,6 +9,9 @@ mqtt:
 frigate:
   url: "http://localhost:5000"
 
+logging:
+  level: "info"
+
 publish_updates: true
 event_timeout: 300
 
