@@ -132,6 +132,33 @@ func TestMatchesProfile(t *testing.T) {
 			want: false,
 		},
 		{
+			name: "Zone & Person Mismatch",
+			profile: models.Profile{
+				Cameras:       []string{"cam1"},
+				RequiredZones: []string{"zoneA"},
+				Labels:        []string{"person"},
+			},
+			state: models.FrigateEventState{
+				Camera:       "cam1",
+				EnteredZones: []string{"zoneA", "zoneB"},
+			},
+			want: false,
+		},
+		{
+			name: "Zone & Person Match",
+			profile: models.Profile{
+				Cameras:       []string{"cam1"},
+				RequiredZones: []string{"zoneA"},
+				Labels:        []string{"person"},
+			},
+			state: models.FrigateEventState{
+				Camera:       "cam1",
+				Label:        "person",
+				EnteredZones: []string{"zoneA", "zoneB"},
+			},
+			want: true,
+		},
+		{
 			name: "Empty Profile (Wildcard)",
 			profile: models.Profile{
 				Cameras: []string{}, // Any

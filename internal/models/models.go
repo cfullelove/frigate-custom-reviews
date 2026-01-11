@@ -70,6 +70,6 @@ type FrigateEventState struct {
 	Label        string   `json:"label"`
 	StartTime    float64  `json:"start_time"`
 	EndTime      float64  `json:"end_time,omitempty"` // 0 or null if active? usually 0 or missing in Frigate
-	CurrentZones []string `json:"entered_zones"`
+	CurrentZones []string `json:"current_zones"`
 	EnteredZones []string `json:"entered_zones"`
 }

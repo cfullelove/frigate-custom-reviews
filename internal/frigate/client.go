@@ -30,6 +30,7 @@ type FrigateAPIEvent struct {
 	Camera    string   `json:"camera"`
 	Label     string   `json:"label"`
 	StartTime float64  `json:"start_time"`
+	Zones     []string `json:"zones"`
 	EndTime   *float64 `json:"end_time"` // Pointer to handle null
 }
 
@@ -64,11 +65,12 @@ func (c *Client) GetActiveEvents() ([]models.FrigateEvent, error) {
 		evt := models.FrigateEvent{
 			Type: "update", // Assume update for existing ongoing events
 			After: models.FrigateEventState{
-				ID:        ae.ID,
-				Camera:    ae.Camera,
-				Label:     ae.Label,
-				StartTime: ae.StartTime,
-				EndTime:   endTime,
+				ID:           ae.ID,
+				Camera:       ae.Camera,
+				Label:        ae.Label,
+				StartTime:    ae.StartTime,
+				EnteredZones: ae.Zones,
+				EndTime:      endTime,
 			},
 		}
 		events = append(events, evt)

@@ -48,7 +48,7 @@ func (e *Engine) Run() {
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 
-	log.Println("Engine started")
+	log.Println("[INFO] Engine started")
 
 	for {
 		select {
@@ -65,7 +65,20 @@ func (e *Engine) handleEvent(evt models.FrigateEvent) {
 
 	for _, profile := range e.profiles {
 		if !e.matchesProfile(profile, state) {
+			// log.Printf("[DEBUG] Rejectd Event: ID: %v, Camera: %v, Label: %v, Zones: %v",
+			// 	evt.After.ID,
+			// 	evt.After.Camera,
+			// 	evt.After.Label,
+			// 	evt.After.EnteredZones,
+			// )
 			continue
+		} else {
+			// log.Printf("[DEBUG] Matched Event: ID: %v, Camera: %v, Label: %v, Zones: %v",
+			// 	evt.After.ID,
+			// 	evt.After.Camera,
+			// 	evt.After.Label,
+			// 	evt.After.EnteredZones,
+			// )
 		}
 
 		review, exists := e.activeReviews[profile.Name]
@@ -80,6 +93,8 @@ func (e *Engine) handleEvent(evt models.FrigateEvent) {
 				LastEventEnd: time.Time{},
 			}
 			e.activeReviews[profile.Name] = review
+		} else {
+			review.State = "active"
 		}
 
 		var beforeState *models.ReviewState
@@ -114,9 +129,9 @@ func (e *Engine) handleEvent(evt models.FrigateEvent) {
 		}
 
 		if err := e.mqttClient.Publish(e.publishTopic, msg); err != nil {
-			log.Printf("Error publishing review update: %v", err)
+			log.Printf("[ERROR] Error publishing review update: %v", err)
 		} else {
-			log.Printf("[MQTT] Published '%s' for Review %s (Profile: %s). Events: %d",
+			log.Printf("[INFO] [MQTT] Published '%s' for Review %s (Profile: %s). Events: %d",
 				payloadType, review.ID, review.Profile.Name, len(review.Events))
 			review.SentFirstEvent = true
 		}
@@ -130,8 +145,8 @@ func (e *Engine) handleTick() {
 		for id, tracked := range review.Events {
 			// If event is active (EndTime == 0) and stale
 			if tracked.Event.After.EndTime == 0 && time.Since(tracked.LastSeen) > e.ghostTimeout {
-				log.Printf("Ghost event detected: %s in review %s. Closing event.", id, review.ID)
-				log.Printf("[Debug] %v, %v ", time.Since(tracked.LastSeen), e.ghostTimeout)
+				log.Printf("[NOTICE] Ghost event detected: %s in review %s. Closing event.", id, review.ID)
+				log.Printf("[DEBUG] %v, %v ", time.Since(tracked.LastSeen), e.ghostTimeout)
 
 				// Force close the event
 				// We set EndTime to the timestamp of when it went stale (approx now)
@@ -152,13 +167,13 @@ func (e *Engine) handleTick() {
 				After:  &currentState,
 			}
 			if err := e.mqttClient.Publish(e.publishTopic, msg); err == nil {
-				log.Printf("[MQTT] Published 'update' (ghost cleanup) for Review %s", review.ID)
+				log.Printf("[INFO] [MQTT] Published 'update' (ghost cleanup) for Review %s", review.ID)
 			}
 		}
 
 		// 2. Check if we should close the review
 		if e.shouldClose(review) {
-			log.Printf("Closing review %s (Profile: %s)", review.ID, name)
+			log.Printf("[INFO] Closing review %s (Profile: %s)", review.ID, name)
 
 			beforeState := e.toReviewState(review)
 
@@ -172,9 +187,9 @@ func (e *Engine) handleTick() {
 			}
 
 			if err := e.mqttClient.Publish(e.publishTopic, msg); err != nil {
-				log.Printf("Error publishing review end: %v", err)
+				log.Printf("[ERROR] Error publishing review end: %v", err)
 			} else {
-				log.Printf("[MQTT] Published 'end' for Review %s (Profile: %s)", review.ID, name)
+				log.Printf("[INFO] [MQTT] Published 'end' for Review %s (Profile: %s)", review.ID, name)
 			}
 
 			delete(e.activeReviews, name)
@@ -202,7 +217,10 @@ func (e *Engine) shouldClose(r *ReviewInstance) bool {
 		return false
 	}
 
-	log.Printf("[Debug] Entering Gap for review %s", r.ID)
+	if r.State != "pending-close" {
+		r.State = "pending-close"
+		log.Printf("[INFO] Entering Gap for review %s", r.ID)
+	}
 
 	lastEnd := time.Unix(int64(maxEndTime), 0)
 	waited := time.Since(lastEnd)
