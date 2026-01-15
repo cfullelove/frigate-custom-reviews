@@ -45,6 +45,8 @@ func (m *MockMQTTPublisher) Clear() {
 func TestMatchesProfile(t *testing.T) {
 	e := &Engine{}
 
+	baseTime := time.Date(2025, 1, 1, 6, 30, 0, 0, time.Local).Unix()
+
 	tests := []struct {
 		name    string
 		profile models.Profile
@@ -167,6 +169,36 @@ func TestMatchesProfile(t *testing.T) {
 			state: models.FrigateEventState{
 				Camera: "cam99",
 				Label:  "ufo",
+			},
+			want: true,
+		},
+		{
+			name: "Time Range Match",
+			profile: models.Profile{
+				TimeRanges: []models.TimeRange{{Start: "05:00", End: "21:00"}},
+			},
+			state: models.FrigateEventState{
+				StartTime: float64(baseTime),
+			},
+			want: true,
+		},
+		{
+			name: "Time Range Mismatch",
+			profile: models.Profile{
+				TimeRanges: []models.TimeRange{{Start: "05:00", End: "21:00"}},
+			},
+			state: models.FrigateEventState{
+				StartTime: float64(time.Date(2025, 1, 1, 23, 0, 0, 0, time.Local).Unix()),
+			},
+			want: false,
+		},
+		{
+			name: "Time Range Overnight",
+			profile: models.Profile{
+				TimeRanges: []models.TimeRange{{Start: "22:00", End: "02:00"}},
+			},
+			state: models.FrigateEventState{
+				StartTime: float64(time.Date(2025, 1, 2, 1, 0, 0, 0, time.Local).Unix()),
 			},
 			want: true,
 		},

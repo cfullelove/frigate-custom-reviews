@@ -27,13 +27,19 @@ type FrigateConfig struct {
 	URL string `yaml:"url"`
 }
 
-type Profile struct {
-	Name          string   `yaml:"name"`           // "front_yard"
-	Cameras       []string `yaml:"cameras"`        // ["doorbell", "driveway"]
-	Labels        []string `yaml:"labels"`         // ["person", "dog"]
-	RequiredZones []string `yaml:"required_zones"` // ["driveway", "road"]
-	Gap           int      `yaml:"gap"`            // 30
-}
+ type TimeRange struct {
+ 	Start string `yaml:"start"` // "05:00"
+ 	End   string `yaml:"end"`   // "21:00"
+ }
+
+ type Profile struct {
+ 	Name          string      `yaml:"name"`           // "front_yard"
+ 	Cameras       []string    `yaml:"cameras"`        // ["doorbell", "driveway"]
+ 	Labels        []string    `yaml:"labels"`         // ["person", "dog"]
+ 	RequiredZones []string    `yaml:"required_zones"` // ["driveway", "road"]
+ 	TimeRanges    []TimeRange `yaml:"time_ranges"`    // [{start: "05:00", end: "21:00"}]
+ 	Gap           int         `yaml:"gap"`            // 30
+ }
 
 type LinkedEventSummary struct {
 	ID     string `json:"id"`

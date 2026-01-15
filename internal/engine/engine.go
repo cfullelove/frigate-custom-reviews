@@ -1,7 +1,10 @@
 package engine
 
 import (
+	"fmt"
 	"slices"
+	"strconv"
+	"strings"
 	"time"
 
 	"frigate-custom-reviews/internal/logger"
@@ -116,6 +119,10 @@ func (e *Engine) handleEvent(evt models.FrigateEvent) {
 		payloadType := "new"
 		if review.SentFirstEvent {
 			payloadType = "update"
+		}
+
+		if beforeState != nil && afterState.ActiveEvents != beforeState.ActiveEvents {
+			logger.Infof("Review %v has changed number of active events %v => %v", review.ID, beforeState.ActiveEvents, afterState.ActiveEvents)
 		}
 
 		if !e.publishUpdates && payloadType == "update" {
@@ -237,6 +244,71 @@ func zonesOverlap(a, b []string) bool {
 	return false
 }
 
+func parseClockMinutes(value string) (int, error) {
+	parts := strings.Split(value, ":")
+	if len(parts) != 2 {
+		return 0, fmt.Errorf("invalid time format: %s", value)
+	}
+
+	hour, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return 0, fmt.Errorf("invalid hour: %s", value)
+	}
+
+	minute, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return 0, fmt.Errorf("invalid minute: %s", value)
+	}
+
+	if hour < 0 || hour > 23 || minute < 0 || minute > 59 {
+		return 0, fmt.Errorf("time out of range: %s", value)
+	}
+
+	return hour*60 + minute, nil
+}
+
+func minutesSinceMidnight(t time.Time) int {
+	return t.Hour()*60 + t.Minute()
+}
+
+func matchesTimeRanges(ranges []models.TimeRange, eventTime float64) (bool, bool) {
+	eventMoment := time.Unix(int64(eventTime), 0).Local()
+	eventMinutes := minutesSinceMidnight(eventMoment)
+	validFound := false
+
+	for _, r := range ranges {
+		start, err := parseClockMinutes(r.Start)
+		if err != nil {
+			logger.Warnf("Invalid time range start '%s': %v", r.Start, err)
+			continue
+		}
+
+		end, err := parseClockMinutes(r.End)
+		if err != nil {
+			logger.Warnf("Invalid time range end '%s': %v", r.End, err)
+			continue
+		}
+
+		validFound = true
+
+		if start == end {
+			return true, true
+		}
+
+		if start < end {
+			if eventMinutes >= start && eventMinutes <= end {
+				return true, true
+			}
+		} else {
+			if eventMinutes >= start || eventMinutes <= end {
+				return true, true
+			}
+		}
+	}
+
+	return false, validFound
+}
+
 func (e *Engine) matchesProfile(p models.Profile, state models.FrigateEventState) bool {
 	if len(p.Cameras) > 0 && !slices.Contains(p.Cameras, state.Camera) {
 		return false
@@ -252,6 +324,13 @@ func (e *Engine) matchesProfile(p models.Profile, state models.FrigateEventState
 
 	if len(p.RequiredZones) > 0 && len(state.EnteredZones) == 0 {
 		return false
+	}
+
+	if len(p.TimeRanges) > 0 {
+		matches, hasValid := matchesTimeRanges(p.TimeRanges, state.StartTime)
+		if !hasValid || !matches {
+			return false
+		}
 	}
 
 	return true
