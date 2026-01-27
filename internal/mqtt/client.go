@@ -3,6 +3,8 @@ package mqtt
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
+	"time"
 
 	"frigate-custom-reviews/internal/logger"
 	"frigate-custom-reviews/internal/models"
@@ -11,11 +13,17 @@ import (
 )
 
 type Client struct {
-	client mqtt.Client
-	config models.MQTTConfig
+	client     mqtt.Client
+	config     models.MQTTConfig
+	ingestChan chan<- models.FrigateEvent
+	mu         sync.Mutex
 }
 
 func NewClient(cfg models.MQTTConfig) *Client {
+	c := &Client{
+		config: cfg,
+	}
+
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(cfg.Broker)
 	opts.SetClientID(cfg.ClientID)
@@ -26,18 +34,23 @@ func NewClient(cfg models.MQTTConfig) *Client {
 	}
 
 	opts.SetAutoReconnect(true)
-	opts.SetOnConnectHandler(func(c mqtt.Client) {
+	opts.SetConnectRetry(true)
+	opts.SetConnectRetryInterval(5 * time.Second)
+
+	opts.SetOnConnectHandler(func(client mqtt.Client) {
 		logger.Infof("Connected to MQTT broker at %s", cfg.Broker)
+		c.mu.Lock()
+		defer c.mu.Unlock()
+		if c.ingestChan != nil {
+			c.doSubscribe()
+		}
 	})
-	opts.SetConnectionLostHandler(func(c mqtt.Client, err error) {
+	opts.SetConnectionLostHandler(func(client mqtt.Client, err error) {
 		logger.Warnf("Lost connection to MQTT broker: %v", err)
 	})
 
-	client := mqtt.NewClient(opts)
-	return &Client{
-		client: client,
-		config: cfg,
-	}
+	c.client = mqtt.NewClient(opts)
+	return c
 }
 
 func (c *Client) Connect() error {
@@ -49,21 +62,32 @@ func (c *Client) Connect() error {
 }
 
 func (c *Client) Subscribe(ingestChan chan<- models.FrigateEvent) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.ingestChan = ingestChan
+	if c.client.IsConnected() {
+		c.doSubscribe()
+	}
+	return nil
+}
+
+func (c *Client) doSubscribe() {
 	token := c.client.Subscribe(c.config.FrigateEventsTopic, 0, func(client mqtt.Client, msg mqtt.Message) {
 		var event models.FrigateEvent
 		if err := json.Unmarshal(msg.Payload(), &event); err != nil {
 			logger.Errorf("Failed to unmarshal Frigate event: %v", err)
 			return
 		}
-		ingestChan <- event
+		c.ingestChan <- event
 	})
 
-	if token.Wait() && token.Error() != nil {
-		return token.Error()
-	}
-
-	logger.Infof("Subscribed to topic: %s", c.config.FrigateEventsTopic)
-	return nil
+	go func() {
+		if token.Wait() && token.Error() != nil {
+			logger.Errorf("Failed to subscribe to topic %s: %v", c.config.FrigateEventsTopic, token.Error())
+		} else {
+			logger.Infof("Subscribed to topic: %s", c.config.FrigateEventsTopic)
+		}
+	}()
 }
 
 func (c *Client) Publish(topic string, payload interface{}) error {

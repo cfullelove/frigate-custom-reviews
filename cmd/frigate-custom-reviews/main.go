@@ -26,14 +26,18 @@ func main() {
 	logger.SetLevel(cfg.Logging.Level)
 	logger.Infof("Loaded config from %s", *configPath)
 
-	// 2. Initialize Clients
+	// 2. Initialize Signal Handling early
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
+	// 3. Initialize Clients
 	mqttClient := mqtt.NewClient(cfg.MQTT)
 	frigateClient := frigate.NewClient(cfg.Frigate)
 
-	// 3. Initialize Engine
+	// 4. Initialize Engine
 	eng := engine.NewEngine(cfg.Profiles, mqttClient, cfg.MQTT.ReviewsPublishTopic, engine.WithGhostTimeout(cfg.GhostTimeout), engine.WithPublishUpdates(cfg.PublishUpdates))
 
-	// 4. Recover State from Frigate API
+	// 5. Recover State from Frigate API
 	logger.Info("Querying Frigate API for active events...")
 	activeEvents, err := frigateClient.GetActiveEvents()
 	if err != nil {
@@ -46,26 +50,25 @@ func main() {
 		}
 	}
 
-	// 5. Connect to MQTT
-	if err := mqttClient.Connect(); err != nil {
-		logger.Fatalf("Failed to connect to MQTT: %v", err)
-	}
+	// 6. Connect to MQTT (Asynchronous to allow engine to start and signals to be handled)
+	go func() {
+		logger.Info("Connecting to MQTT broker...")
+		if err := mqttClient.Connect(); err != nil {
+			logger.Errorf("MQTT connection failed: %v", err)
+		}
+	}()
 	defer mqttClient.Disconnect()
 
-	// 6. Subscribe to Frigate Events
-	// We pass the engine's ingest channel directly to the MQTT subscriber
+	// 7. Subscribe to Frigate Events
+	// This will automatically subscribe when the connection is established
 	if err := mqttClient.Subscribe(eng.IngestChannel()); err != nil {
-		logger.Fatalf("Failed to subscribe to topic: %v", err)
+		logger.Errorf("Failed to setup MQTT subscription: %v", err)
 	}
 
-	// 7. Start Engine (Blocking or Non-blocking? Engine.Run is blocking)
-	// We run it in a goroutine so we can handle signals
+	// 8. Start Engine
 	go eng.Run()
 
-	// 8. Wait for Signal
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-
+	// 9. Wait for Signal
 	sig := <-sigChan
 	logger.Infof("Received signal %v, shutting down...", sig)
 }
